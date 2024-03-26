@@ -17,7 +17,7 @@ class FileService
 
     public function storeValues(string $filePath)
     {   
-        $this->titles = ["Mr", "Mrs", "Ms", "Miss", "Mister", "Prof", "Dr"];
+        $this->titles = ["Mr", "Mrs", "Ms", "Miss", "Master", "Prof", "Dr"];
         $this->person = [];
         $this->wordType = " ";
         //$titles = explode(',', env('TITLES_ARRAY'));
@@ -42,9 +42,7 @@ class FileService
                     if(!isset($this->person['last_name'])) {
                         $this->isLastName($word, $words);
                     }
-                } 
-                
-                
+                }       
            }
         }
         
@@ -85,15 +83,15 @@ class FileService
         //Check if the word is the Last name
         $lastWord = end($words); 
         if ($lastWord === $word && array_key_exists("title", $this->person)) {
-            $this->isLastWord($word, $this->wordType, $this->person);
+            $this->isLastWord($word);
         } 
         if (array_key_exists("first_name", $this->person)) {
             $this->wordType = "last_name";
-            $this->addWord($word, $this->wordType, $this->person); 
+            $this->addWord($word); 
         } 
         if (!In_array($word, $this->titles) && !in_array($word, ["&", "and"]) && array_key_exists("title", $this->person)) {
             $this->wordType = "first_name";
-            $this->addWord($word, $this->wordType, $this->person);
+            $this->addWord($word);
         } 
         return;
     }
@@ -102,7 +100,7 @@ class FileService
     {
         //Check if the last name is not set and the word is & or and
         if (!array_key_exists("last_name", $this->person) && $word ==="&" || strtolower($word) === "and") {
-            $this->isLastWord($word, $this->wordType, $this->person);            
+            $this->isLastWord($word);            
         }
     }
 
@@ -110,7 +108,7 @@ class FileService
     {
         //Calls the function to add last name to the Person Array
         $this->wordType = "last_name";
-        $this->addWord($word, $this->wordType, $this->person);
+        $this->addWord($word);
         $this->addPerson();
     }
 
@@ -119,7 +117,7 @@ class FileService
         //Add the word to the person array and move to the next iteration
         $this->person[$this->wordType] = $word; 
         print_r($this->person);
-        return;   
+        
     }
 
     public function addPerson()
