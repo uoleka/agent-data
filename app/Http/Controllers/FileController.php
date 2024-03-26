@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Services\FileService;
 use App\Http\Requests\UploadFileRequest;
 
@@ -13,17 +14,15 @@ class FileController extends Controller
         $filePath = $validated->getPathname();
       
         try {
-            
-            // Create the order using the OrderService
+            // Create the upload and process the file using the FileService
             $filePersons = $fileService->storeValues($filePath); 
-            // Return a success response with the created order
-            return response()->json([
-                'message' => 'Persons record created successfully'
-            ], 201);
-        } catch (Exception $e) {
-            return response()->json([
-                'error' => "The records couldn't be created"
-            ], 500);
+            // Return a success response
+            return redirect()->route('upload.file')->with('message', 'Data processed and submitted successfully!');
+        } catch (\Exception $e) {
+            // Log the exception 
+            Log::error($e->getMessage());
+            // Redirect back with an error message
+            return back()->with('error', 'An error occurred. Please try again.');
         }
     }
 }

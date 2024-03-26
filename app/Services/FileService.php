@@ -7,128 +7,125 @@ class FileService
 {
     protected $person;
     protected $titles;
+    protected $conjection;
     protected $wordType;
     protected $filePath;
+    protected $words;
     protected $word;
-   /* public function __construct($filePath)
-    {
-        $this->filePath = $filePath;
-    } */
+    protected $lastWord;
 
+    /**
+     * Reads each line and extract the words.
+     */
     public function storeValues(string $filePath)
     {   
-        $this->titles = ["Mr", "Mrs", "Ms", "Miss", "Master", "Prof", "Dr"];
+        $this->titles = ["Mr", "Mrs", "Ms", "Miss", "Mister", "Prof", "Dr"];
         $this->person = [];
+        $this->conjection = ["&", "and"];
         $this->wordType = " ";
-        //$titles = explode(',', env('TITLES_ARRAY'));
         //Read the csv file
         $file = new \SplFileObject($filePath, 'r');
         $file->setFlags(\SplFileObject::READ_CSV);
         foreach ($file as $row) {
-           $words = explode(" ", $row[0]);
-           foreach ($words as $word) {       
+           $this->words = explode(" ", $row[0]);
+           //Process the words for assigning to the array
+           foreach ($this->words as $word) {       
                 htmlspecialchars($word);
-                if(!isset($this->person['title'])) {
+                $this->lastWord = end($this->words);
+                //will not run unless title is not set yet.
+                if (!isset($this->person['title'])) {
                     $this->isTitle($word);
+                }
+                //Checks that Title is excuted once and is available before Others.
+                if (isset($this->person['title']) && !in_array($word, $this->titles)) {
+                    $this->isConjection($word); 
+                    $this->isInitials($word);
+                    $this->isFirstName($word);
+                    $this->isLastName($word);
                 } 
-                if (isset($this->person['title'])) {
-                    $this->isConjection($word);
-                    if(!isset($this->person['initials'])) {
-                        $this->isInitials($word);
-                    } 
-                    if(!isset($this->person['first_name'])) {
-                        $this->isFirstName($word);    
-                    } 
-                    if(!isset($this->person['last_name'])) {
-                        $this->isLastName($word, $words);
-                    }
-                }       
-           }
+            }
         }
         
     }
    
+    /**
+     * Determine if the word is a Title.
+     */
     public function isTitle(string $word)
     {   
-        //checks if the word is a title
         if (in_array($word, $this->titles)) {
             $this->wordType = "title";
             $this->addWord($word);
         } 
     }
 
+    /**
+     * Determine if the word is an initial with or without a full stop.
+     */
     public function isInitials(string $word) 
     {
-        //checks if the word has a single letter with an optional full stop.
-        $word = preg_match('/^[A-Za-z]\.?$/i', $word);
-        if ($word) {
+        $wordIsInitials = preg_match('/^[A-Za-z]\.?$/i', $word);
+        if ($wordIsInitials) {
             $this->wordType = "initials";
             $this->addWord($word); 
         }           
     }
     
-
+    /**
+     * Determine if the word is a First Name.
+     */
     public function isFirstName(string $word)
     {
-        //Check if the word is First name
-        if (!In_array($word, $this->titles) && !in_array($word, ["&", "and"]) && !array_key_exists("first_name", $this->person)) {
-            $this->wordType = "first_name";
-            $this->addWord($word);
+        if (!in_array($word, $this->titles) && !in_array($word, $this->conjection) && !array_key_exists("first_name", $this->person)) {
+            if (!isset($this->person["last_name"]) && !array_key_exists("initials", $this->person) && $this->lastWord != $word) {
+                $this->wordType = "first_name";
+                $this->addWord($word);
+            }
         } 
         
     }
 
-    public function isLastName(string $word, array $words)
+    /**
+     * Determine if the word is a Last name and send off for Database submittion.
+     */
+    public function isLastName(string $word)
     {
-        //Check if the word is the Last name
-        $lastWord = end($words); 
-        if ($lastWord === $word && array_key_exists("title", $this->person)) {
-            $this->isLastWord($word);
-        } 
-        if (array_key_exists("first_name", $this->person)) {
+        if ($this->lastWord == $word) {
             $this->wordType = "last_name";
-            $this->addWord($word); 
-        } 
-        if (!In_array($word, $this->titles) && !in_array($word, ["&", "and"]) && array_key_exists("title", $this->person)) {
-            $this->wordType = "first_name";
             $this->addWord($word);
+            $this->addPerson();    
         } 
-        return;
+         
     }
 
+    /**
+     * Determine if the word is a conjection.
+     */
     public function isConjection(string $word) 
     {
-        //Check if the last name is not set and the word is & or and
         if (!array_key_exists("last_name", $this->person) && $word ==="&" || strtolower($word) === "and") {
-            $this->isLastWord($word);            
+            $this->isLastName($this->lastWord);            
         }
     }
 
-    public function isLastWord(string $word)
-    {
-        //Calls the function to add last name to the Person Array
-        $this->wordType = "last_name";
-        $this->addWord($word);
-        $this->addPerson();
-    }
-
+    /**
+     * Add the word to the Specified array Person.
+     */
     public function addWord(string $word)
     {
-        //Add the word to the person array and move to the next iteration
         $this->person[$this->wordType] = $word; 
-        print_r($this->person);
-        
+        return;
     }
 
+    /**
+     * Add the array to the database.
+     */
     public function addPerson()
     {
-        //save the values from the person array to the database
         $personModel = new Person;
         $personModel->fill($this->person);
-        if (isset($person['title'])) {
-            $personModel->save();
-        }
+        $personModel->save();
         $this->person = [];
-        return;
+        return;  
     }
 }
