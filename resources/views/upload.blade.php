@@ -828,16 +828,27 @@ background-image:url(https://assets-global.website-files.com/642522bddd0d326660d
    visibility: hidden !important;
 }
 </style></head>
+<div class=container>
+@if ($errors->any())
+  <div class="alert alert-danger">
+      <ul>
+          @foreach ($errors->all() as $error)
+              <li>{{ $error }}</li>
+          @endforeach
+      </ul>
+  </div>
+@endif  
 @if(session('error'))
     <div class="alert alert-danger">
         {{ session('error') }}
     </div>
-    @endif
-    @if(session()->has('message'))
-        <div class="alert alert-success">
-            {{ session()->get('message') }}
-        </div>
-    @endif
+@endif
+@if(session()->has('message'))
+    <div class="alert alert-success">
+        {{ session()->get('message') }}
+    </div>
+@endif
+</div>
 <body class="body"><div class="w-embed w-iframe"><!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TD78ZG3"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
